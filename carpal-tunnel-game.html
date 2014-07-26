@@ -1,0 +1,143 @@
+<!--
+  @Author: evanthebouncy
+  A simple clicking game to train mouse precision
+  You must alternatively click between the circles multiple times to advance
+-->
+
+
+<style>
+#Canvas {
+  height: 100%;
+  width:100%;
+  background-color: #222222;
+}
+</style>
+
+<html>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.2/raphael-min.js"></script>
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+  // =============== parameters you can change ===================
+
+  // radius of circle
+  var radius = 30;
+  // number of clicks until next pair
+  var num_clicks = 4;
+
+  
+  // ============== real codes, touch at your own risk =====================
+  
+  round_number = 0;
+  var circle1_count = 0;
+  var circle2_count = 0;
+  var last_clicked = false;
+  var round_text = false;
+  var circle1 = false;
+  var circle2 = false;
+
+  //Create paper element from canvas DIV
+  var canvas = $("#Canvas");
+  paper = Raphael("Canvas", canvas.width(), canvas.height());
+
+  //Register Event
+  $("#Canvas").click(function CanvasClick(e) {
+      if (e.target.nodeName == "svg"){
+        reset_stage();
+      }
+  })
+
+    
+  function render() {
+    // red intensity is porportional to how far it is until completion
+    // green intesntiy is porportional to completion
+    var red_intensity1 = (num_clicks - circle1_count) / num_clicks * 16;
+    var green_intensity1 = circle1_count / num_clicks * 16;
+    var red_intensity2 = (num_clicks - circle2_count) / num_clicks * 16;
+    var green_intensity2 = circle2_count / num_clicks * 16;
+    // too lazy to figure out the right boundary conditions, just cap it
+    red_intensity1 = Math.min(Math.max(0, red_intensity1), 15)
+    red_intensity2 = Math.min(Math.max(0, red_intensity2), 15)
+    green_intensity1 = Math.min(Math.max(0, green_intensity1), 15)
+    green_intensity2 = Math.min(Math.max(0, green_intensity2), 15)
+    
+    var c1_color = "#"+red_intensity1.toString(16)+green_intensity1.toString(16)+"2";
+    var c2_color = "#"+red_intensity2.toString(16)+green_intensity2.toString(16)+"2";
+    circle1.attr({fill: c1_color});
+    circle2.attr({fill: c2_color});
+  }
+
+  function reset_stage() {
+    last_clicked = false;
+    circle1_count = 0;
+    circle2_count = 0;
+    render();
+  }
+
+  function get_circle(num_circle) {
+    var x_lower = radius;
+    var x_upper = canvas.width() - 2 * radius;
+    var y_lower = radius;
+    var y_upper = canvas.height() - 2 * radius;
+    var x_coord = x_lower + Math.random() * x_upper;
+    var y_coord = y_lower + Math.random() * y_upper;
+    var circle = paper.circle(x_coord, y_coord, 50)
+        .data("number", num_circle);
+    circle.click(function() {
+      if (last_clicked != this) {
+        if (this.data("number") == 1) {
+          circle1_count = circle1_count + 1;
+        }
+        if (this.data("number") == 2) {
+          circle2_count = circle2_count + 1;
+        }
+        last_clicked = this;
+        next_stage(); 
+        render();
+      }
+    })
+    return circle;
+  }
+
+  function new_stage() {
+    // update round number
+    round_number = round_number + 1;
+    if (round_text != false) {
+      round_text.remove();
+    }
+    round_text = paper.text(canvas.width()/2, canvas.height()/2, "round: " + round_number.toString());
+    round_text.attr({ "font-family": "Helvetica", fill: "white", "font-size": 40, "-webkit-user-select" : "none" });
+    // get some new circles
+    init_circles();
+    // reset the current stage
+    reset_stage();
+  }
+
+  function next_stage() {
+    if (circle1_count == num_clicks && circle2_count == num_clicks) {
+      new_stage();
+    }
+  }
+
+  function init_circles() {
+    if (circle1 != false && circle2 != false){
+      circle1.remove();
+      circle2.remove();
+    }
+    circle1 = get_circle(1);
+    circle2 = get_circle(2);
+    render();
+  }
+
+  new_stage();
+
+});
+
+</script>
+
+<body>
+<div id="Canvas"></div>
+</body>
+</html>
